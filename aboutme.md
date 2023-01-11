@@ -1,2 +1,1 @@
 # Denis Lukovnikov
-## Research
