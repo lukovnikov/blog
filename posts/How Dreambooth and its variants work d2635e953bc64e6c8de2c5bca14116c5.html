@@ -1,0 +1,670 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>How Dreambooth and its variants work</title><style>
+/* cspell:disable-file */
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 3px;
+	padding: 1rem;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.column-list {
+	display: flex;
+	justify-content: space-between;
+}
+
+.column {
+	padding: 0 1em;
+}
+
+.column:first-child {
+	padding-left: 0;
+}
+
+.column:last-child {
+	padding-right: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	text-indent: -1.7em;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+.simple-table {
+	margin-top: 1em;
+	font-size: 0.875rem;
+	empty-cells: show;
+}
+.simple-table td {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table th {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table-header-color {
+	background: rgb(247, 246, 243);
+	color: black;
+}
+.simple-table-header {
+	font-weight: 500;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-block;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	max-height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1.25em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; }
+.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; }
+.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; }
+.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; }
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; }
+.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; }
+.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; }
+.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; }
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.highlight-default {
+	color: rgba(55, 53, 47, 1);
+}
+.highlight-gray {
+	color: rgba(120, 119, 116, 1);
+	fill: rgba(120, 119, 116, 1);
+}
+.highlight-brown {
+	color: rgba(159, 107, 83, 1);
+	fill: rgba(159, 107, 83, 1);
+}
+.highlight-orange {
+	color: rgba(217, 115, 13, 1);
+	fill: rgba(217, 115, 13, 1);
+}
+.highlight-yellow {
+	color: rgba(203, 145, 47, 1);
+	fill: rgba(203, 145, 47, 1);
+}
+.highlight-teal {
+	color: rgba(68, 131, 97, 1);
+	fill: rgba(68, 131, 97, 1);
+}
+.highlight-blue {
+	color: rgba(51, 126, 169, 1);
+	fill: rgba(51, 126, 169, 1);
+}
+.highlight-purple {
+	color: rgba(144, 101, 176, 1);
+	fill: rgba(144, 101, 176, 1);
+}
+.highlight-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.highlight-red {
+	color: rgba(212, 76, 71, 1);
+	fill: rgba(212, 76, 71, 1);
+}
+.highlight-gray_background {
+	background: rgba(241, 241, 239, 1);
+}
+.highlight-brown_background {
+	background: rgba(244, 238, 238, 1);
+}
+.highlight-orange_background {
+	background: rgba(251, 236, 221, 1);
+}
+.highlight-yellow_background {
+	background: rgba(251, 243, 219, 1);
+}
+.highlight-teal_background {
+	background: rgba(237, 243, 236, 1);
+}
+.highlight-blue_background {
+	background: rgba(231, 243, 248, 1);
+}
+.highlight-purple_background {
+	background: rgba(244, 240, 247, 0.8);
+}
+.highlight-pink_background {
+	background: rgba(249, 238, 243, 0.8);
+}
+.highlight-red_background {
+	background: rgba(253, 235, 236, 1);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(120, 119, 116, 1);
+	fill: rgba(120, 119, 116, 1);
+}
+.block-color-brown {
+	color: rgba(159, 107, 83, 1);
+	fill: rgba(159, 107, 83, 1);
+}
+.block-color-orange {
+	color: rgba(217, 115, 13, 1);
+	fill: rgba(217, 115, 13, 1);
+}
+.block-color-yellow {
+	color: rgba(203, 145, 47, 1);
+	fill: rgba(203, 145, 47, 1);
+}
+.block-color-teal {
+	color: rgba(68, 131, 97, 1);
+	fill: rgba(68, 131, 97, 1);
+}
+.block-color-blue {
+	color: rgba(51, 126, 169, 1);
+	fill: rgba(51, 126, 169, 1);
+}
+.block-color-purple {
+	color: rgba(144, 101, 176, 1);
+	fill: rgba(144, 101, 176, 1);
+}
+.block-color-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.block-color-red {
+	color: rgba(212, 76, 71, 1);
+	fill: rgba(212, 76, 71, 1);
+}
+.block-color-gray_background {
+	background: rgba(241, 241, 239, 1);
+}
+.block-color-brown_background {
+	background: rgba(244, 238, 238, 1);
+}
+.block-color-orange_background {
+	background: rgba(251, 236, 221, 1);
+}
+.block-color-yellow_background {
+	background: rgba(251, 243, 219, 1);
+}
+.block-color-teal_background {
+	background: rgba(237, 243, 236, 1);
+}
+.block-color-blue_background {
+	background: rgba(231, 243, 248, 1);
+}
+.block-color-purple_background {
+	background: rgba(244, 240, 247, 0.8);
+}
+.block-color-pink_background {
+	background: rgba(249, 238, 243, 0.8);
+}
+.block-color-red_background {
+	background: rgba(253, 235, 236, 1);
+}
+.select-value-color-pink { background-color: rgba(245, 224, 233, 1); }
+.select-value-color-purple { background-color: rgba(232, 222, 238, 1); }
+.select-value-color-green { background-color: rgba(219, 237, 219, 1); }
+.select-value-color-gray { background-color: rgba(227, 226, 224, 1); }
+.select-value-color-opaquegray { background-color: rgba(255, 255, 255, 0.0375); }
+.select-value-color-orange { background-color: rgba(250, 222, 201, 1); }
+.select-value-color-brown { background-color: rgba(238, 224, 218, 1); }
+.select-value-color-red { background-color: rgba(255, 226, 221, 1); }
+.select-value-color-yellow { background-color: rgba(253, 236, 200, 1); }
+.select-value-color-blue { background-color: rgba(211, 229, 239, 1); }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style></head><body><article id="d2635e95-3bc6-4e6c-8de2-c5bca14116c5" class="page sans"><header><img class="page-cover-image" src="https://www.notion.so/images/page-cover/nasa_carina_nebula.jpg" style="object-position:center 100%"/><div class="page-header-icon page-header-icon-with-cover"><span class="icon">😴</span></div><h1 class="page-title">How Dreambooth and its variants work</h1></header><div class="page-body"><blockquote id="d69069cc-8bbb-4dc6-8538-8eff9a85e86f" class="block-color-gray_background"><em><strong>What do such machines really do? They increase the number of things we can do without thinking. Things we do without thinking — there&#x27;s the real danger.</strong></em> - <strong>Leto II, from Dune, by Frank Herbert</strong></blockquote><p id="7a403488-c465-45c7-bc36-e5875b189a1b" class="">Probably I don’t need to introduce Stable Diffusion (or the controversy around it), so I’ll just get to the point of explaining how DreamBooth, Textual Inversion and Custom Diffusion work and enable users to teach the models novels concepts.</p><p id="2b1168d7-0270-4b6a-b599-3e3093443c0d" class="">The goal is to improve understanding of how and why such methods work and summarize their papers rather than teaching how to use these tools in any particular UI.</p><h2 id="44171f23-4e66-4754-a345-39388ff59f60" class="">Problem setup</h2><p id="2bb6568b-3d8c-4b9c-b960-9b3750633008" class="">Generative models like Stable Diffusion are being trained on a massive collection of data in order to learn a (conditional) distribution of the real images. This phase can be quite costly and is typically done only rarely. After this training phase (which is mostly referred to as “<strong>pretraining</strong>”), the model can be published for anyone with sufficient computational power to use.</p><p id="b0d5f40e-5ac8-43a1-8e9b-4f3923694700" class="">However, while such pretrained models may work out-of-the-box for many things, some things, like a new style might be beyond the vanilla pre-trained model. In this article, we’re focusing on teaching the text-to-image diffusion-based generative models like Stable Diffusion <strong>new concepts </strong>that it might not know and that might be difficult or impossible to express through prompt engineering.</p><p id="70a98384-9f06-4a31-9da4-f00b5ce65df0" class="">The three solutions we discuss here can be categorized as <strong>fine-tuning </strong>approaches, where we continue training the network, or parts of it in order to teach it a new thing. Ideally, we would like the network to acquire the new concept as precisely as possible, such that the new entity we added is identifiable when it’s generated, and we want to generate this new entity in new contexts. At the same time, we want the model to retain its existing ability to understand descriptions and visualize old concepts. And ideally, we would like to be able to compose multiple concepts, for example generating an image of the Puss in Boots and the Cheshire Cat assuming the model didn’t know about either of them.</p><p id="aedc5976-f0cc-4ebe-a158-5c4ff58f88bd" class="">While the task of learning a new concept that we consider here is very related to the task of <strong>text-based image editing</strong>, there is the difference that in image editing, we have one specific main reference image that we want to apply minimal changes to according to a (change in) description. In learning a new concept, we don’t have this constraint, or a main base image, and the focus rather lies in learning a new concept as faithfully as possible such that it generalizes to other contexts and compositions with other (novel or old) concepts.</p><h2 id="47f70478-e47d-48ba-afcd-b39e12ace4c4" class="">😴 DreamBooth</h2><p id="df4a00bc-62ee-4411-b08f-6b03e941a9b5" class="">Paper:</p><figure id="442420d6-25d8-42a7-b256-e5f7314a42e4"><a href="https://arxiv.org/pdf/2208.12242.pdf" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title"></div></div><div class="bookmark-href"><img src="https://arxiv.org/favicon.ico" class="icon bookmark-icon"/>https://arxiv.org/pdf/2208.12242.pdf</div></div></a></figure><p id="4ccb7375-eb02-417f-bf18-6f3f67706d30" class="">This is just plain and simple finetuning with a few new examples of a new concept and hope that it generalizes to new contexts. The original text-to-image model is trained with a large number of text-image pairs. </p><p id="b70593ac-f893-4e02-8716-f675b7e3a520" class="">In order to teach the model a new concept for which we have a few examples, we simply continue training the entire diffusion model (and the text encoder) with our new text-image pairs for the new concept. A small twist is that when constructing the new training examples, the new concept is associated with a unique word. During prediction, we can then use that word to refer to this specific new concept. For example, we could associate a token “sks” with our particular dog and have examples with description “a sks dog”.</p><p id="e1475e6a-21a6-40e9-8a7b-d6c1e6d2a1e2" class="">The following figure from the paper illustrates the fine-tuning set-up, as well as the way the model is used during prediction:</p><figure id="86309ff6-297f-4501-a436-6ed3d4281a54" class="image"><a href="How%20Dreambooth%20and%20its%20variants%20work%20d2635e953bc64e6c8de2c5bca14116c5/Untitled.png"><img style="width:1488px" src="How%20Dreambooth%20and%20its%20variants%20work%20d2635e953bc64e6c8de2c5bca14116c5/Untitled.png"/></a></figure><p id="7f2fc30f-0387-413a-bea6-9f8727af6d4d" class="">However, the simple approach of fine-tuning a model of hundreds of millions of parameters on a few new examples runs the risk of the model <strong>overfitting </strong>and of <strong>language drift</strong>. These problems can lead to the model forgetting other concepts, inability to generate other things or other instances of the same type of object as our new object.</p><p id="4be73454-6c61-48f2-ac1f-43e9faf922e5" class="">To counteract these problems, the authors propose to extend the fine-tuning training data set with additional examples. The authors refer to this as “autogenous class-specific prior preservation loss” but what it comes down to is simply (1) generating a number of images described by the class of the new concept (e.g. “a dog”) and (2) fine-tuning on these examples together with the new concept examples. This should prevent the model from forgetting how to generate other instances of the same class and associating the class word (”dog”) with our specific instance of it. However, this does not protect very well from over-fitting, as I found in my own experiments with Stable Diffusion. When training too long, the model can only generate our specific new dog, and its own generated instances but ignores most context descriptions.</p><p id="40b888f6-d2b2-46c0-96bb-fc717f4d82c2" class="">The entire approach can then be summarized in the following figure, taken from the paper:</p><figure id="0813f077-418e-404a-8b5b-c36cebe301b0" class="image"><a href="How%20Dreambooth%20and%20its%20variants%20work%20d2635e953bc64e6c8de2c5bca14116c5/Untitled%201.png"><img style="width:1496px" src="How%20Dreambooth%20and%20its%20variants%20work%20d2635e953bc64e6c8de2c5bca14116c5/Untitled%201.png"/></a></figure><p id="08fb288d-4bde-43a8-9d89-854697332d23" class="">The authors also fine-tune the upscaler component. However, in the Huggingface implementation of Dreambooth for Stable Diffusion, the autoencoder is not being fine-tuned and it still appears to work well.</p><p id="5862b93b-231f-4d68-a9c8-f73c7036ca21" class="">While the results are impressive, there are significant issues with this approach. First, it’s not clear how to efficiently and reliably combine multiple models fine-tuned on different new concepts in order to compose them in one image. Second, fine-tuning the <em>entire</em> model for every new subject is incredibly storage-inefficient: with Stable Diffusion, this requires storing 5GB for every fine-tuned model (however, we could also store compressed delta’s but still). Third, fine-tuning nearly billion parameters (for Stable Diffusion v1.4) on just a few hundred examples, out of which only a few are real is very prone to overfitting and requires careful tuning of training parameters.</p><h2 id="36bb63f2-ac12-4f2b-976d-80e6170294c3" class="">🙃Textual Inversion</h2><p id="1393ca92-8d9e-45d1-8ad8-7fb026052e77" class="">Paper:</p><figure id="90a4df2e-2349-4451-8117-6f0a0da62677"><a href="https://arxiv.org/pdf/2208.01618.pdf" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title"></div></div><div class="bookmark-href">https://arxiv.org/pdf/2208.01618.pdf</div></div></a></figure><p id="89f87220-22a4-4c9b-8519-9eab10c25531" class="">This paper appeared on arXiv around the same time as DreamBooth and tackles a similar task of generating novel variations of previously unknown concepts given only a handful of images. Citing risks of over-fitting and catastrophic forgetting when fine-tuning large parts of large models or even adapters, the authors instead propose a very minimalistic approach: they simply train one (or a few) word vector(s) for the new concept. This leaves the rest of the text encoder and the image generator untouched and thus doesn’t need prior preservation techniques as badly as DreamBooth.</p><p id="da9b9afa-e515-4089-8fc4-890c5ddfbd50" class="">The approach is summarized in the following figure from the paper. During fine-tuning, we construct examples like “a photo of [S]” where “[S]” is a placeholder string, paired with an image of our new concept, similarly to DreamBooth. But then, we fine-tune only the representation of the tokens involved in embedding the placeholder string “[S]”. It appears that the authors consider training only a single vector for each concept.</p><figure id="b24fc94f-6b85-47ec-957e-fbc71d2d4c20" class="image"><a href="How%20Dreambooth%20and%20its%20variants%20work%20d2635e953bc64e6c8de2c5bca14116c5/Untitled%202.png"><img style="width:1014px" src="How%20Dreambooth%20and%20its%20variants%20work%20d2635e953bc64e6c8de2c5bca14116c5/Untitled%202.png"/></a></figure><p id="f97cc979-0479-4243-acfe-c4d649d3e98a" class="">This method is reminiscent of GAN inversion, with the difference that here we instead learn to invert into an embedding of a token (hence the name). It is also similar to continuous prompt tuning for large language models, with the difference that instead of learning a new task, here we learn a new concept.</p><p id="7247cc3e-9245-48cc-a213-7abc53c8bd52" class="">For an extremely simple approach, the results are impressive. Here are some examples from the paper:</p><figure id="cf213a5b-abe4-4922-bc65-9859d55177dd" class="image"><a href="How%20Dreambooth%20and%20its%20variants%20work%20d2635e953bc64e6c8de2c5bca14116c5/Untitled%203.png"><img style="width:1273px" src="How%20Dreambooth%20and%20its%20variants%20work%20d2635e953bc64e6c8de2c5bca14116c5/Untitled%203.png"/></a></figure><figure id="b2ffa634-4131-4657-8292-0e1db759baea" class="image"><a href="How%20Dreambooth%20and%20its%20variants%20work%20d2635e953bc64e6c8de2c5bca14116c5/Untitled%204.png"><img style="width:1269px" src="How%20Dreambooth%20and%20its%20variants%20work%20d2635e953bc64e6c8de2c5bca14116c5/Untitled%204.png"/></a></figure><p id="8c727d0d-4457-43ef-8274-737c43c3f356" class="">Training just a few embedding vectors is sufficient to capture the main characteristics of a certain subject or style. And this works without extending the training procedure to avoid catastrophic forgetting.</p><p id="b830a36f-175e-4a68-96fb-b9b6bb2eb23b" class="">What’s more interesting is the out-of-the-box ability to combine newly acquired concepts:</p><figure id="c14a5184-7ffc-4d24-87fc-a06f50934d9a" class="image"><a href="How%20Dreambooth%20and%20its%20variants%20work%20d2635e953bc64e6c8de2c5bca14116c5/Untitled%205.png"><img style="width:1258px" src="How%20Dreambooth%20and%20its%20variants%20work%20d2635e953bc64e6c8de2c5bca14116c5/Untitled%205.png"/></a></figure><p id="43558f79-8678-424c-95c1-774e0460dba0" class="">However, the authors note that their method struggles with compositions where two newly acquired objects have to be placed next to each other in the picture.</p><p id="5b9122b5-9493-4fc5-9a60-8f644e103aa5" class="">In the end, the results are quite impressive for such a simple approach, and exhibits some interesting qualities like (1) minimal storage footprint: only a few embedding vectors have to be stored for every new concept, and (2) zero-shot composition of newly acquired concepts. However, as noted by users of this approach, it can produce subpar results compared to DreamBooth and may not capture all the details of an object. Also, just one (or a few) vector probably has limited ability to store all the specific details about a new concept (e.g. fur patterns or precise facial features, …) precisely enough. In addition, it is not clear how well multi-vector descriptions will be handled by the pretrained encoder and how well they will behave when composing multiple concepts when they were originally trained in isolation.</p><h2 id="be74da99-d762-4100-8b86-a64237eabbf0" class="">🛃 Custom Diffusion</h2><p id="10cad7d8-dfe7-4b77-9f11-d9fefd7bc667" class="">Paper:</p><figure id="1f41432e-9192-46cf-8f67-72e24a36f04e"><a href="https://arxiv.org/pdf/2212.04488.pdf" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title"></div></div><div class="bookmark-href"><img src="https://arxiv.org/favicon.ico" class="icon bookmark-icon"/>https://arxiv.org/pdf/2212.04488.pdf</div></div></a></figure><p id="eabbb378-b126-48f8-abc5-31d17df2a857" class="">Somewhere in between DreamBooth and Textual Inversion lies Custom Diffusion. Just like the other two, a fine-tuning approach is used, where some parts of the model are being trained further on the new examples. It is essentially DreamBooth with two major difference: (1) instead of the autogenous prior preservation approach in DreamBooth, Custom Diffusion instead retrieves images with most similar captions as the new concept descriptions and (2) it fine-tunes only the key and value projections of the cross-attention layers instead of the whole UNet, and similarly to Textual Inversion, it also trains the embedding of the special new token. The following figure from the paper summarizes the approach:</p><figure id="e5c582a7-61cc-48e5-89a0-2291b207f3c0" class="image"><a href="How%20Dreambooth%20and%20its%20variants%20work%20d2635e953bc64e6c8de2c5bca14116c5/Untitled%206.png"><img style="width:1809px" src="How%20Dreambooth%20and%20its%20variants%20work%20d2635e953bc64e6c8de2c5bca14116c5/Untitled%206.png"/></a></figure><p id="d0659702-1d82-4e38-b7ed-2633944f7b90" class="">The choice of training only the key-value projections in cross-attention is motivated by the fact that cross-attention parameters change more than other parameters when fine-tuning the entire model while constituting only 5% of the total parameter count.</p><p id="c867a71f-b6f6-42f7-9445-8b7ed05240e3" class="">The authors dedicate additional attention to the composition of novel concepts and explore two approaches: (1) joint training with datasets for both concepts and (2) an constrained optimization approach to quickly merge the key-value projections of two different individually trained concepts.</p><p id="46ac55de-a4b4-46b6-8dc4-294788dca8fe" class="">Here are some results for single-concept training from the paper:</p><figure id="34f081cc-32a9-4b40-ad5e-28905d0dd093" class="image"><a href="How%20Dreambooth%20and%20its%20variants%20work%20d2635e953bc64e6c8de2c5bca14116c5/Untitled%207.png"><img style="width:1813px" src="How%20Dreambooth%20and%20its%20variants%20work%20d2635e953bc64e6c8de2c5bca14116c5/Untitled%207.png"/></a></figure><p id="ae1341f3-1326-4f5f-8538-706c35bda022" class="">And here are some results for merging two new concepts:</p><figure id="bcb91717-86c0-483f-bd75-422b52957536" class="image"><a href="How%20Dreambooth%20and%20its%20variants%20work%20d2635e953bc64e6c8de2c5bca14116c5/Untitled%208.png"><img style="width:1478px" src="How%20Dreambooth%20and%20its%20variants%20work%20d2635e953bc64e6c8de2c5bca14116c5/Untitled%208.png"/></a></figure><p id="b0754b77-aa5d-4255-b53b-80aa8ad4c923" class="">From these results, it appears that the merging approach (second column, “optimization”) works for combining separately trained concepts.</p><p id="760c1f7c-9e4e-4fe9-91b4-3389f2258df0" class="">While the generation quality of objects appears to be improved when fine-tuning only the key-value projections in cross-attention, this method still changes core model weights and runs the risk of over-training, which is mitigated here, to a degree, using additional images selected from LAION-400M. Merging two concepts requires either fine-tuning from scratch or running a custom optimization procedure. And advantage compared to DreamBooth is lower storage requirements, but it’s still a few orders of magnitude more than Textual Inversion.</p><p id="95c4010e-683b-4557-bbc5-c67cd1f6b65c" class="">
+</p><p id="59840f71-fdca-4c08-801b-55f5cf665eb9" class="">This concludes our overview of DreamBooth and a few related methods.</p></div></article></body></html>
